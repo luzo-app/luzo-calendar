@@ -2,7 +2,6 @@ import * as React from "react"
 import { Plus } from "lucide-react"
 
 import { Calendars } from "@/components/calendars"
-import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/sidebar"
 import CalendarBodyDayCalendar from "./calendar/body/day/calendar-body-day-calendar"
 import CalendarBodyDayEvents from "./calendar/body/day/calendar-body-day-events"
-import TimeRotate from "./time-rotate"
 import { useCalendarContext } from "./calendar/calendar-context"
 
 // This is sample data.

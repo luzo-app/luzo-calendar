@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import { API_URL, DOMAIN, PREFIX_BASE_URL } from "./constants";
-import Cookies from "js-cookie";
+import { getCookie, setCookie } from "@/lib/cookies";
 
 const api = axios.create({
   baseURL: `${API_URL}${PREFIX_BASE_URL}`,
@@ -9,7 +9,7 @@ const api = axios.create({
 // Add a request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get("token");
+    const token = getCookie("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,13 +36,13 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = Cookies.get("refreshToken");
+        const refreshToken = getCookie("refreshToken");
         const response = await axios.post("/api/refresh-token", {
           refreshToken,
         });
         const { token } = response.data;
 
-        Cookies.set("token", token, {
+        setCookie("token", token, {
           domain: DOMAIN,
           secure: window.location.protocol === "https:",
           sameSite: "Lax",

@@ -3,16 +3,15 @@ import {
     useMemo,
     useReducer,
     ReactNode,
-    useEffect,
 } from "react";
 
 import axios from "axios";
-import Cookies from 'js-cookie';
 
 import { DOMAIN } from "@/api/constants";
-import profileService from "@/api/profile";
 
 import { User } from "@/types/user";
+
+import { getCookie, setCookie } from "@/lib/cookies";
 
 // Types
 type AuthState = {
@@ -35,8 +34,8 @@ const authReducer = (state: AuthState, action: any): AuthState => {
 };
 
 const initialData: AuthState = {
-    token: Cookies.get('token') || null,
-    refreshToken: Cookies.get('refreshToken') || null,
+    token: getCookie('token') || null,
+    refreshToken: getCookie('refreshToken') || null,
     user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user") as string) : null,
 };
 
@@ -61,12 +60,12 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
             const { token, refreshToken } = response.data;
 
             axios.defaults.headers.common["Authorization"] = "Bearer " + token;
-            Cookies.set("token", token, {
+            setCookie("token", token, {
                 domain: DOMAIN,
                 secure: window.location.protocol === "https:",
                 sameSite: "Lax"
             });
-            Cookies.set("refreshToken", refreshToken, {
+            setCookie("refreshToken", refreshToken, {
                 domain: DOMAIN,
                 secure: window.location.protocol === "https:",
                 sameSite: "Lax"
