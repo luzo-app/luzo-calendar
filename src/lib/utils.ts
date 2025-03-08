@@ -10,6 +10,7 @@ export function isEmpty(value: string | unknown[] | null | undefined | number) {
     value === null ||
     value === undefined ||
     value === "" ||
+    value === " " ||
     (Array.isArray(value) && value.length === 0) ||
     (typeof value === "object" && Object.keys(value).length === 0)
   );

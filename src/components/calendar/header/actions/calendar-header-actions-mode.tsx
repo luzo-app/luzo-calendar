@@ -8,6 +8,17 @@ import { cn } from '@/lib/utils'
 export default function CalendarHeaderActionsMode() {
   const { mode, setMode } = useCalendarContext()
 
+  const getCalendarModeText = (mode: Mode) => {
+    switch (mode) {
+      case 'day':
+        return 'Jour'
+      case 'week':
+        return 'Semaine'
+      case 'month':
+        return 'Mois'
+    }
+  }
+
   return (
     <LayoutGroup>
       <ToggleGroup
@@ -112,7 +123,8 @@ export default function CalendarHeaderActionsMode() {
                           },
                         }}
                       >
-                        {modeValue.charAt(0).toUpperCase() + modeValue.slice(1)}
+                        {getCalendarModeText(modeValue)}
+                        {/* {modeValue.charAt(0).toUpperCase() + modeValue.slice(1)} */}
                       </motion.p>
                     )}
                   </AnimatePresence>

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -18,15 +19,17 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useCalendarContext } from '../calendar-context'
-import { format } from 'date-fns'
 import { DateTimePicker } from '@/components/form/date-time-picker'
 import { ColorPicker } from '@/components/form/color-picker'
+import eventService from '@/api/events'
+import { Event } from '@/types/event'
+import { processError } from '@/api/error'
 
 const formSchema = z
   .object({
     title: z.string().min(1, 'Title is required'),
-    start: z.string().datetime(),
-    end: z.string().datetime(),
+    start: z.string().datetime({ offset: true }),
+    end: z.string().datetime({ offset: true }),
     color: z.string(),
   })
   .refine(
@@ -42,38 +45,55 @@ const formSchema = z
   )
 
 export default function CalendarNewEventDialog() {
-  const { newEventDialogOpen, setNewEventDialogOpen, date, events, setEvents } =
+  const { newEventDialogOpen, setNewEventDialogOpen, date, events, setEvents, calendarDayClicked } =
     useCalendarContext()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      start: format(date, "yyyy-MM-dd'T'HH:mm"),
-      end: format(date, "yyyy-MM-dd'T'HH:mm"),
+      start: calendarDayClicked?.toISOString() || date.toISOString(),
+      end: calendarDayClicked?.toISOString() || date.toISOString(),
       color: 'blue',
     },
   })
 
+  useEffect(() => {
+    if (calendarDayClicked) {
+      form.reset({
+        title: '',
+        start: calendarDayClicked.toISOString(),
+        end: calendarDayClicked?.toISOString() || date.toISOString(),
+        color: 'blue',
+      })
+    }
+  }, [calendarDayClicked, date, form])
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newEvent = {
-      id: crypto.randomUUID(),
       title: values.title,
       start: new Date(values.start),
       end: new Date(values.end),
       color: values.color,
     }
-
-    setEvents([...events, newEvent])
-    setNewEventDialogOpen(false)
-    form.reset()
+    eventService.createEvent(newEvent)
+      .then((response) => {
+        const resEvent = response.data as Event
+        setEvents([...events, resEvent])
+        setNewEventDialogOpen(false)
+        form.reset()
+      })
+      .catch((error) => {
+        processError(error)
+        setEvents(events)
+      })
   }
 
   return (
     <Dialog open={newEventDialogOpen} onOpenChange={setNewEventDialogOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create event</DialogTitle>
+          <DialogTitle>Ajouter un événement</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -82,9 +102,9 @@ export default function CalendarNewEventDialog() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold">Title</FormLabel>
+                  <FormLabel className="font-bold">Titre</FormLabel>
                   <FormControl>
-                    <Input placeholder="Event title" {...field} />
+                    <Input placeholder="Titre de l'événement" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,7 +116,7 @@ export default function CalendarNewEventDialog() {
               name="start"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold">Start</FormLabel>
+                  <FormLabel className="font-bold">Début</FormLabel>
                   <FormControl>
                     <DateTimePicker field={field} />
                   </FormControl>
@@ -110,7 +130,7 @@ export default function CalendarNewEventDialog() {
               name="end"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold">End</FormLabel>
+                  <FormLabel className="font-bold">Fin</FormLabel>
                   <FormControl>
                     <DateTimePicker field={field} />
                   </FormControl>
@@ -124,7 +144,7 @@ export default function CalendarNewEventDialog() {
               name="color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold">Color</FormLabel>
+                  <FormLabel className="font-bold">Couleur</FormLabel>
                   <FormControl>
                     <ColorPicker field={field} />
                   </FormControl>
@@ -134,7 +154,7 @@ export default function CalendarNewEventDialog() {
             />
 
             <div className="flex justify-end">
-              <Button type="submit">Create event</Button>
+              <Button type="submit">Ajouter l'événement</Button>
             </div>
           </form>
         </Form>

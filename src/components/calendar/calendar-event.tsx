@@ -31,7 +31,7 @@ function calculateEventPosition(
 ): EventPosition {
   const overlappingEvents = getOverlappingEvents(event, allEvents)
   const group = [event, ...overlappingEvents].sort(
-    (a, b) => a.start.getTime() - b.start.getTime()
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
   )
   const position = group.indexOf(event)
   const width = `${100 / (overlappingEvents.length + 1)}%`

@@ -3,9 +3,10 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 
 import { buttonVariants } from "@/components/ui/button"
-import { useCalendarContext } from "../calendar/calendar-context"
 
 import { cn } from "@/lib/utils"
+
+import { fr } from 'date-fns/locale'
 
 function Calendar({
   className,
@@ -13,10 +14,9 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
-  const { date, setDate } = useCalendarContext()
   return (
     <DayPicker
-      today={date}
+      locale={fr}
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
@@ -61,8 +61,6 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
-      onMonthChange={setDate}
-      onDayClick={setDate}
       components={{
         IconLeft: ({ className, ...props }) => (
           <ChevronLeft className={cn("size-4", className)} {...props} />

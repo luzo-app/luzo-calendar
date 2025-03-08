@@ -1,18 +1,10 @@
 import { useEffect, useState } from "react"
-import { useLocation, useNavigate } from "react-router"
 
-import { fr } from 'date-fns/locale'
-import { format } from "date-fns"
 import { toast } from "sonner"
+import { endOfMonth, startOfMonth } from "date-fns"
 
 import { AppSidebar } from "@/components/app-sidebar"
 import ContentLayout from "@/components/content-layout"
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbList,
-    BreadcrumbPage,
-} from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
     SidebarInset,
@@ -27,61 +19,78 @@ import CalendarHeaderActions from "@/components/calendar/header/actions/calendar
 import CalendarHeaderActionsMode from "@/components/calendar/header/actions/calendar-header-actions-mode"
 import CalendarHeaderActionsAdd from "@/components/calendar/header/actions/calendar-header-actions-add"
 import CalendarBody from "@/components/calendar/body/calendar-body"
+import { ModeToggle } from "@/components/mode-toggle"
+import { Button } from "@/components/ui/button"
 
-import eventService from "@/api/event"
+import eventService from "@/api/events"
+import calendarService from "@/api/calendars"
 
-import { capitalizeFirstLetter } from "@/lib/utils"
+import { useQueryParams } from "@/hooks/use-query-params"
 
 import { Event } from "@/types/event"
+import { Calendar } from "@/types/calendar"
 
 const HomePage: React.FC = () => {
-    const [events, setEvents] = useState<Event[]>()
     const [loading, setLoading] = useState<boolean>(false)
 
-    const [mode, setMode] = useState<Mode>('month')
-    const [date, setDate] = useState<Date>(new Date())
+    const [events, setEvents] = useState<Event[]>()
+    const [calendars, setCalendars] = useState<Calendar[]>()
 
-    const location = useLocation();
-    const navigate = useNavigate();
+    const [mode, setMode_] = useState<Mode>('month')
+    const [date, setDate_] = useState<Date>(new Date())
 
-    const getEvents = async (): Promise<void> => {
-        setLoading(true)
-        await eventService.getEvents()
-            .then((response) => {
-                setEvents(response.data as Event[])
-            })
-            .catch((error) => {
-                toast(error.message)
-            })
-            .finally(() => {
-                setLoading(false)
-            })
+    const { getQueryParamByKey, setQueryParam } = useQueryParams()
+
+    const modeParam = getQueryParamByKey('mode') as Mode
+    const dateParam = getQueryParamByKey('date') ? new Date(getQueryParamByKey('date')) : new Date()
+
+    const setDate = (date: Date) => {
+        setQueryParam('date', date.toISOString())
+        setDate_(date)
     }
 
-    const deleteEvent = async (id: number): Promise<void> => {
-        setLoading(true)
-        await eventService.deleteEvent(id)
-            .catch((error) => {
-                toast(error.message)
-            })
+    const setMode = (mode: Mode) => {
+        setQueryParam('mode', mode)
+        setMode_(mode)
     }
 
     useEffect(() => {
-        getEvents()
+        // Get the first day of the month
+        const monthStart = startOfMonth(dateParam).toISOString()
+        // Get the last day of the month
+        const monthEnd = endOfMonth(dateParam).toISOString()
+
+        Promise.all([eventService.getEvents(monthStart, monthEnd), calendarService.getCalendars()])
+            .then(([eventsResponse, calendarsResponse]) => {
+                setEvents(eventsResponse.data as Event[])
+                setCalendars(calendarsResponse.data as Calendar[])
+            })
+            .catch((error) => toast(error.data.detail))
+            .finally(() => setLoading(false))
+
+        if (modeParam && modeParam !== mode) setMode(modeParam)
+        if (dateParam && dateParam !== date) setDate(dateParam)
+        // eslint-disable-next-line
     }, [])
 
     useEffect(() => {
-        if (location.state?.eventToDelete) {
-            deleteEvent(location.state.eventToDelete.id)
-                .finally(() => {
-                    navigate(location.pathname, { replace: true });
-                })
-        }
-    }, [location.state])
+        if (!events || !calendars) return
 
-    if (!events) {
+        // Get the first day of the month
+        const monthStart = startOfMonth(date).toISOString()
+        // Get the last day of the month
+        const monthEnd = endOfMonth(date).toISOString()
+
+        eventService.getEvents(monthStart, monthEnd)
+            .then((response) => setEvents(response.data as Event[]))
+            .catch((error) => toast(error.data.detail))
+
+        // eslint-disable-next-line
+    }, [getQueryParamByKey('mode'), getQueryParamByKey('date')])
+
+    if (!events || !calendars) {
         return (
-            <ContentLayout loading={loading}></ContentLayout>
+            <ContentLayout loading={loading} />
         )
     }
 
@@ -90,6 +99,8 @@ const HomePage: React.FC = () => {
             <CalendarProvider
                 events={events}
                 setEvents={setEvents}
+                calendars={calendars}
+                setCalendars={setCalendars}
                 mode={mode}
                 setMode={setMode}
                 date={date}
@@ -99,18 +110,17 @@ const HomePage: React.FC = () => {
                 <SidebarProvider>
                     <AppSidebar />
                     <SidebarInset>
-                        <header className="sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 z-10">
-                            <SidebarTrigger className="block lg:hidden -ml-1" />
-                            <Separator orientation="vertical" className="block lg:hidden mr-2 h-4" />
-                            <Breadcrumb>
-                                <BreadcrumbList>
-                                    <BreadcrumbItem>
-                                        <BreadcrumbPage>
-                                            {capitalizeFirstLetter(format(date, 'LLLL', { locale: fr }))} {format(date, 'yyyy', { locale: fr })}
-                                        </BreadcrumbPage>
-                                    </BreadcrumbItem>
-                                </BreadcrumbList>
-                            </Breadcrumb>
+                        <header className="sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 z-20">
+                            <SidebarTrigger className="block md:hidden lg:hidden -ml-1" />
+                            <Separator orientation="vertical" className="block md:hidden lg:hidden mr-2 h-4" />
+                            <div className="flex justify-between items-center w-full">
+                                <Button
+                                    onClick={() => setDate(new Date())}
+                                >
+                                    Aujourd'hui
+                                </Button>
+                                <ModeToggle />
+                            </div>
                         </header>
                         <div className="flex flex-1 flex-col gap-4 p-4">
                             <CalendarHeader>

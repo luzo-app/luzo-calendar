@@ -1,7 +1,9 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { format } from 'date-fns'
+
 import {
   Dialog,
   DialogContent,
@@ -20,7 +22,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useCalendarContext } from '../calendar-context'
-import { format } from 'date-fns'
 import { DateTimePicker } from '@/components/form/date-time-picker'
 import { ColorPicker } from '@/components/form/color-picker'
 import {
@@ -34,8 +35,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { useNavigate } from 'react-router'
-import { routes } from '@/data'
+
+import eventService from '@/api/events'
+import { processError } from '@/api/error'
 
 const formSchema = z
   .object({
@@ -74,8 +76,6 @@ export default function CalendarManageEventDialog() {
     setEvents,
   } = useCalendarContext()
 
-  const navigate = useNavigate()
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -108,22 +108,33 @@ export default function CalendarManageEventDialog() {
       color: values.color,
     }
 
-    setEvents(
-      events.map((event) =>
-        event.id === selectedEvent.id ? updatedEvent : event
-      )
-    )
-    handleClose()
+    eventService.updateEvent(selectedEvent.id, updatedEvent)
+      .then(() => {
+        setEvents(
+          events.map((event) =>
+            event.id === selectedEvent.id ? updatedEvent : event
+          )
+        )
+      })
+      .catch((error) => {
+        processError(error)
+        setEvents(events)
+      })
+      .finally(() => {
+        handleClose()
+      })
   }
 
   function handleDelete() {
     if (!selectedEvent) return
-    navigate(routes.HOME, {
-      state: {
-        eventToDelete: selectedEvent
-      }
-    })
-    handleClose()
+    eventService.deleteEvent(selectedEvent.id)
+      .then(() => {
+        setEvents(events.filter((event) => event.id !== selectedEvent.id))
+      })
+      .catch(processError)
+      .finally(() => {
+        handleClose()
+      })
   }
 
   function handleClose() {
@@ -136,7 +147,7 @@ export default function CalendarManageEventDialog() {
     <Dialog open={manageEventDialogOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Manage event</DialogTitle>
+          <DialogTitle>Modifier un événement</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -145,9 +156,9 @@ export default function CalendarManageEventDialog() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold">Title</FormLabel>
+                  <FormLabel className="font-bold">Titre</FormLabel>
                   <FormControl>
-                    <Input placeholder="Event title" {...field} />
+                    <Input placeholder="Titre de l'événement" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -159,7 +170,7 @@ export default function CalendarManageEventDialog() {
               name="start"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold">Start</FormLabel>
+                  <FormLabel className="font-bold">Début</FormLabel>
                   <FormControl>
                     <DateTimePicker field={field} />
                   </FormControl>
@@ -173,7 +184,7 @@ export default function CalendarManageEventDialog() {
               name="end"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold">End</FormLabel>
+                  <FormLabel className="font-bold">Fin</FormLabel>
                   <FormControl>
                     <DateTimePicker field={field} />
                   </FormControl>
@@ -187,7 +198,7 @@ export default function CalendarManageEventDialog() {
               name="color"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-bold">Color</FormLabel>
+                  <FormLabel className="font-bold">Couleur</FormLabel>
                   <FormControl>
                     <ColorPicker field={field} />
                   </FormControl>
@@ -200,26 +211,26 @@ export default function CalendarManageEventDialog() {
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" type="button">
-                    Delete
+                    Supprimer
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete event</AlertDialogTitle>
+                    <AlertDialogTitle>Supprimer un événement</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete this event? This action
-                      cannot be undone.
+                      Êtes-vous sûr de vouloir supprimer cet événement ?
+                      Cette action est irréversible.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDelete}>
-                      Delete
+                      Supprimer
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              <Button type="submit">Update event</Button>
+              <Button type="submit">Modifier l'événement</Button>
             </DialogFooter>
           </form>
         </Form>

@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button'
 import { useCalendarContext } from '../../calendar-context'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
-  format,
   addDays,
   addMonths,
   addWeeks,
@@ -51,10 +50,6 @@ export default function CalendarHeaderDateChevrons() {
       >
         <ChevronLeft className="min-w-5 min-h-5" />
       </Button>
-
-      <span className="min-w-[140px] text-center font-medium">
-        {format(date, 'MMMM d, yyyy')}
-      </span>
 
       <Button
         variant="outline"

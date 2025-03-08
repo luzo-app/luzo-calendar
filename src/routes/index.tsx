@@ -18,7 +18,7 @@ import { ProtectedRoute } from "./protected-route";
 // import roleHelpers from "@/helpers/role";
 
 // Public Page
-const NotFoundPage = React.lazy(() => import('@/error/not-found'));
+const NotFoundPage = React.lazy(() => import('@/views/error/not-found'));
 
 // Guest Pages
 const HomePage = React.lazy(() => import('@/views/home'));

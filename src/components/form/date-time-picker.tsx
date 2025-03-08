@@ -1,8 +1,7 @@
-'use client'
-
 import * as React from 'react'
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -26,7 +25,8 @@ export function DateTimePicker({ field }: DateTimePickerProps) {
   )
   const [isOpen, setIsOpen] = React.useState(false)
 
-  const hours = Array.from({ length: 12 }, (_, i) => i + 1)
+  // Heures de 0 à 23 pour le format 24 heures
+  const hours = Array.from({ length: 24 }, (_, i) => i)
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
@@ -40,24 +40,14 @@ export function DateTimePicker({ field }: DateTimePickerProps) {
   }
 
   const handleTimeChange = (
-    type: 'hour' | 'minute' | 'ampm',
+    type: 'hour' | 'minute',
     value: string
   ) => {
     const newDate = new Date(date)
     if (type === 'hour') {
-      newDate.setHours(
-        (parseInt(value) % 12) + (newDate.getHours() >= 12 ? 12 : 0)
-      )
+      newDate.setHours(parseInt(value))
     } else if (type === 'minute') {
       newDate.setMinutes(parseInt(value))
-    } else if (type === 'ampm') {
-      const currentHours = newDate.getHours()
-      const isPM = value === 'PM'
-      if (isPM && currentHours < 12) {
-        newDate.setHours(currentHours + 12)
-      } else if (!isPM && currentHours >= 12) {
-        newDate.setHours(currentHours - 12)
-      }
     }
     setDate(newDate)
     field.onChange(newDate.toISOString())
@@ -75,9 +65,9 @@ export function DateTimePicker({ field }: DateTimePickerProps) {
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {date ? (
-            format(date, 'MM/dd/yyyy hh:mm aa')
+            format(date, 'dd/MM/yyyy HH:mm', { locale: fr })
           ) : (
-            <span>MM/DD/YYYY hh:mm aa</span>
+            <span>JJ/MM/AAAA HH:mm</span>
           )}
         </Button>
       </PopoverTrigger>
@@ -88,6 +78,7 @@ export function DateTimePicker({ field }: DateTimePickerProps) {
             selected={date}
             onSelect={handleDateSelect}
             initialFocus
+            locale={fr}
           />
           <div className="flex flex-col sm:flex-row sm:h-[300px] divide-y sm:divide-y-0 sm:divide-x">
             <ScrollArea className="w-64 sm:w-auto">
@@ -97,14 +88,14 @@ export function DateTimePicker({ field }: DateTimePickerProps) {
                     key={hour}
                     size="icon"
                     variant={
-                      date && date.getHours() % 12 === hour % 12
+                      date && date.getHours() === hour
                         ? 'default'
                         : 'ghost'
                     }
                     className="sm:w-full shrink-0 aspect-square"
                     onClick={() => handleTimeChange('hour', hour.toString())}
                   >
-                    {hour}
+                    {hour.toString().padStart(2, '0')}
                   </Button>
                 ))}
               </div>
@@ -129,27 +120,6 @@ export function DateTimePicker({ field }: DateTimePickerProps) {
                 ))}
               </div>
               <ScrollBar orientation="horizontal" className="sm:hidden" />
-            </ScrollArea>
-            <ScrollArea>
-              <div className="flex sm:flex-col p-2">
-                {['AM', 'PM'].map((ampm) => (
-                  <Button
-                    key={ampm}
-                    size="icon"
-                    variant={
-                      date &&
-                      ((ampm === 'AM' && date.getHours() < 12) ||
-                        (ampm === 'PM' && date.getHours() >= 12))
-                        ? 'default'
-                        : 'ghost'
-                    }
-                    className="sm:w-full shrink-0 aspect-square"
-                    onClick={() => handleTimeChange('ampm', ampm)}
-                  >
-                    {ampm}
-                  </Button>
-                ))}
-              </div>
             </ScrollArea>
           </div>
         </div>

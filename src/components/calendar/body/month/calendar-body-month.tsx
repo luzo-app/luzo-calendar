@@ -15,7 +15,7 @@ import CalendarEvent from '../../calendar-event'
 import { AnimatePresence, motion } from 'framer-motion'
 
 export default function CalendarBodyMonth() {
-  const { date, events, setDate, setMode } = useCalendarContext()
+  const { date, events, setDate, setMode, setCalendarDayClicked, setNewEventDialogOpen } = useCalendarContext()
 
   // Get the first day of the month
   const monthStart = startOfMonth(date)
@@ -87,8 +87,8 @@ export default function CalendarBodyMonth() {
                 )}
                 onClick={(e) => {
                   e.stopPropagation()
-                  setDate(day)
-                  setMode('day')
+                  setCalendarDayClicked(day)
+                  setNewEventDialogOpen(true)
                 }}
               >
                 <div

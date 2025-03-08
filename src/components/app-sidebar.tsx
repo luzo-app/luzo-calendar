@@ -16,35 +16,38 @@ import {
 } from "@/components/ui/sidebar"
 import CalendarBodyDayCalendar from "./calendar/body/day/calendar-body-day-calendar"
 import CalendarBodyDayEvents from "./calendar/body/day/calendar-body-day-events"
+import TimeRotate from "./time-rotate"
+import { useCalendarContext } from "./calendar/calendar-context"
 
 // This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  calendars: [
-    {
-      name: "My Calendars",
-      items: ["Personal", "Work", "Family"],
-    },
-    {
-      name: "Favorites",
-      items: ["Holidays", "Birthdays"],
-    },
-    {
-      name: "Other",
-      items: ["Travel", "Reminders", "Deadlines"],
-    },
-  ],
-}
+// const data = {
+//   user: {
+//     name: "shadcn",
+//     email: "m@example.com",
+//     avatar: "/avatars/shadcn.jpg",
+//   },
+//   calendars: [
+//     {
+//       name: "My Calendars",
+//       items: ["Personal", "Work", "Family"],
+//     },
+//     {
+//       name: "Favorites",
+//       items: ["Holidays", "Birthdays"],
+//     },
+//     {
+//       name: "Other",
+//       items: ["Travel", "Reminders", "Deadlines"],
+//     },
+//   ],
+// }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { setNewCalendarDialogOpen } = useCalendarContext()
   return (
     <Sidebar {...props}>
       <SidebarHeader className="border-sidebar-border h-16 border-b">
-        <NavUser user={data.user} />
+        {/* <TimeRotate /> */}
       </SidebarHeader>
       <SidebarContent>
         <div className="flex flex-col flex-grow divide-y max-w-[276px]">
@@ -52,14 +55,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <CalendarBodyDayEvents />
         </div>
         <SidebarSeparator className="mx-0" />
-        <Calendars calendars={data.calendars} />
+        <Calendars />
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton>
+            <SidebarMenuButton onClick={() => setNewCalendarDialogOpen(true)}>
               <Plus />
-              <span>New Calendar</span>
+              <span>Ajouter un calendrier</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
