@@ -64,7 +64,7 @@ export function Calendars() {
                 >
                   <CollapsibleTrigger className="flex items-center">
                     <DropdownMenu>
-                      <DropdownMenuTrigger>
+                      <DropdownMenuTrigger asChild>
                         <span
                           className="hover:underline cursor-pointer"
                           onClick={(e) => {
