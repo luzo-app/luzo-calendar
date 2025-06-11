@@ -16,7 +16,7 @@ function getOverlappingEvents(
   events: CalendarEventType[]
 ): CalendarEventType[] {
   return events.filter((event) => {
-    if (event.id === currentEvent.id) return false
+    if (event._id === currentEvent._id) return false
     return (
       currentEvent.start < event.end &&
       currentEvent.end > event.start &&
@@ -75,7 +75,7 @@ export default function CalendarEvent({
 
   // Generate a unique key that includes the current month to prevent animation conflicts
   const isEventInCurrentMonth = isSameMonth(event.start, date)
-  const animationKey = `${event.id}-${isEventInCurrentMonth ? 'current' : 'adjacent'
+  const animationKey = `${event._id}-${isEventInCurrentMonth ? 'current' : 'adjacent'
     }`
 
   return (

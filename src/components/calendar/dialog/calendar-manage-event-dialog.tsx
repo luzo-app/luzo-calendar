@@ -39,6 +39,8 @@ import {
 import eventService from '@/api/events'
 import { processError } from '@/api/error'
 
+import useCrypto from '@/hooks/use-crypto'
+
 const formSchema = z
   .object({
     title: z.string().min(1, 'Title is required'),
@@ -76,6 +78,11 @@ export default function CalendarManageEventDialog() {
     setEvents,
   } = useCalendarContext()
 
+  const {
+    encryptData,
+    decryptData,
+  } = useCrypto()
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -102,19 +109,27 @@ export default function CalendarManageEventDialog() {
 
     const updatedEvent = {
       ...selectedEvent,
-      title: values.title,
-      start: new Date(values.start),
-      end: new Date(values.end),
-      color: values.color,
+      title: encryptData(values.title)?.data as string,
+      start: encryptData(values.start)?.data as string,
+      end: encryptData(values.end)?.data as string,
+      color: encryptData(values.color)?.data as string,
     }
 
-    eventService.updateEvent(selectedEvent.id, updatedEvent)
+    eventService.updateEvent(selectedEvent._id, updatedEvent)
       .then(() => {
         setEvents(
           events.map((event) =>
-            event.id === selectedEvent.id ? updatedEvent : event
+            event._id === selectedEvent._id ? {
+              ...event,
+              title: decryptData(updatedEvent.title)?.data as string,
+              start: decryptData(updatedEvent.start)?.data as string,
+              end: decryptData(updatedEvent.end)?.data as string,
+              color: decryptData(updatedEvent.color)?.data as string,
+            } : event
           )
         )
+        setManageEventDialogOpen(false)
+        form.reset()
       })
       .catch((error) => {
         processError(error)
@@ -127,9 +142,9 @@ export default function CalendarManageEventDialog() {
 
   function handleDelete() {
     if (!selectedEvent) return
-    eventService.deleteEvent(selectedEvent.id)
+    eventService.deleteEvent(selectedEvent._id)
       .then(() => {
-        setEvents(events.filter((event) => event.id !== selectedEvent.id))
+        setEvents(events.filter((event) => event._id !== selectedEvent._id))
       })
       .catch(processError)
       .finally(() => {

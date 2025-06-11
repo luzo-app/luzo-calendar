@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -17,11 +18,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useCalendarContext } from '../calendar-context'
+import { useCalendarContext } from '@/components/calendar/calendar-context'
+
 import calendarService from '@/api/calendars'
-import { Calendar } from '@/types/calendar'
 import { processError } from '@/api/error'
-import { useEffect } from 'react'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
@@ -65,12 +65,11 @@ export default function CalendarManageCalendarDialog() {
     }
 
     calendarService
-      .updateCalendar(selectedCalendar.id, updatedCalendar)
-      .then((response) => {
-        const resCalendar = response.data as Calendar
+      .updateCalendar(selectedCalendar._id, updatedCalendar)
+      .then((calendar) => {
         setCalendars(
           calendars.map((cal) =>
-            cal.id === selectedCalendar.id ? resCalendar : cal
+            cal._id === selectedCalendar._id ? calendar : cal
           )
         )
         handleClose()
@@ -116,7 +115,7 @@ export default function CalendarManageCalendarDialog() {
                 <FormItem>
                   <FormLabel className="font-bold">Catégories</FormLabel>
                   <FormControl>
-                    <>
+                    <div className="space-y-2">
                       {field.value.map((item, index) => (
                         <div key={index} className="flex items-center space-x-2 mb-2">
                           <Input
@@ -147,7 +146,7 @@ export default function CalendarManageCalendarDialog() {
                       >
                         Ajouter une catégorie
                       </Button>
-                    </>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -1,5 +1,5 @@
 type Calendar = {
-    id: number;
+    _id: string;
     name: string;
     items: string[];
 }

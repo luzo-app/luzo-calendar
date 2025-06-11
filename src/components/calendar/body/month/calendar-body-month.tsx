@@ -104,7 +104,7 @@ export default function CalendarBodyMonth() {
                   <div className="flex flex-col gap-1 mt-1">
                     {dayEvents.slice(0, 3).map((event) => (
                       <CalendarEvent
-                        key={event.id}
+                        key={event._id}
                         event={event}
                         className="relative h-auto"
                         month

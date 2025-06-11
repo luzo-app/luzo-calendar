@@ -19,7 +19,7 @@ export default function CalendarBodyDayContent({ date }: { date: Date }) {
         ))}
 
         {dayEvents.map((event) => (
-          <CalendarEvent key={event.id} event={event} />
+          <CalendarEvent key={event._id} event={event} />
         ))}
       </div>
     </div>

@@ -17,10 +17,12 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useCalendarContext } from '../calendar-context'
+import { useCalendarContext } from '@/components/calendar/calendar-context'
+
 import calendarService from '@/api/calendars'
-import { Calendar } from '@/types/calendar'
 import { processError } from '@/api/error'
+
+import useCrypto from '@/hooks/use-crypto'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Le nom est requis'),
@@ -30,6 +32,11 @@ const formSchema = z.object({
 export default function CalendarCreateDialog() {
   const { newCalendarDialogOpen, setNewCalendarDialogOpen, calendars, setCalendars } =
     useCalendarContext()
+
+  const {
+    encryptData,
+    decryptData,
+  } = useCrypto()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,15 +48,17 @@ export default function CalendarCreateDialog() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newCalendar = {
-      id: calendars.length + 1,
-      name: values.name,
-      items: values.items.filter((item) => item.trim() !== ''),
+      name: encryptData(values.name)?.data as string,
+      items: values.items.filter((item) => item.trim() !== '').map((item) => encryptData(item)?.data as string),
     }
     calendarService
       .createCalendar(newCalendar)
-      .then((response) => {
-        const resCalendar = response.data as Calendar
-        setCalendars([...calendars, resCalendar])
+      .then((calendar) => {
+        setCalendars([...calendars, {
+          ...calendar,
+          name: decryptData(calendar.name)?.data as string,
+          items: calendar.items.map((item) => decryptData(item)?.data as string),
+        }])
         setNewCalendarDialogOpen(false)
         form.reset()
       })

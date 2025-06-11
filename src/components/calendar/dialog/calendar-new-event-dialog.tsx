@@ -26,7 +26,7 @@ import { ColorPicker } from '@/components/form/color-picker'
 import eventService from '@/api/events'
 import { processError } from '@/api/error'
 
-import { Event } from '@/types/event'
+import useCrypto from '@/hooks/use-crypto'
 
 const formSchema = z
   .object({
@@ -51,6 +51,11 @@ export default function CalendarNewEventDialog() {
   const { newEventDialogOpen, setNewEventDialogOpen, date, events, setEvents, calendarDayClicked } =
     useCalendarContext()
 
+  const {
+    encryptData,
+    decryptData,
+  } = useCrypto()
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -74,15 +79,20 @@ export default function CalendarNewEventDialog() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const newEvent = {
-      title: values.title,
-      start: new Date(values.start),
-      end: new Date(values.end),
-      color: values.color,
+      title: encryptData(values.title)?.data as string,
+      start: encryptData(values.start)?.data as string,
+      end: encryptData(values.end)?.data as string,
+      color: encryptData(values.color)?.data as string,
     }
     eventService.createEvent(newEvent)
-      .then((response) => {
-        const resEvent = response.data as Event
-        setEvents([...events, resEvent])
+      .then((event) => {
+        setEvents([...events, {
+          ...event,
+          title: decryptData(event.title)?.data as string,
+          color: decryptData(event.color)?.data as string,
+          start: decryptData(event.start)?.data as string,
+          end: decryptData(event.end)?.data as string,
+        }])
         setNewEventDialogOpen(false)
         form.reset()
       })

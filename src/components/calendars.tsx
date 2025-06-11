@@ -31,6 +31,8 @@ import { processError } from "@/api/error"
 
 import { useAlertDialog } from "@/hooks/use-alert-dialog"
 
+import { Calendar } from "@/types/calendar"
+
 export function Calendars() {
   const {
     calendars,
@@ -40,10 +42,10 @@ export function Calendars() {
   } = useCalendarContext()
   const alertDialog = useAlertDialog()
 
-  const deleteCalendar = async (id: number): Promise<void> => {
+  const deleteCalendar = async (id: Calendar["_id"]): Promise<void> => {
     calendarService.deleteCalendar(id)
       .then(() => {
-        setCalendars(calendars.filter(calendar => calendar.id !== id))
+        setCalendars(calendars.filter(calendar => calendar._id !== id))
       })
       .catch(processError)
   }
@@ -92,7 +94,7 @@ export function Calendars() {
                               title: "Supprimer le calendrier",
                               description: `Êtes-vous sûr de vouloir supprimer le calendrier "${calendar.name}" ?`,
                               onConfirm: () => {
-                                deleteCalendar(calendar.id)
+                                deleteCalendar(calendar._id)
                               }
                             })
                           }}

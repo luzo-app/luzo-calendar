@@ -26,6 +26,7 @@ import eventService from "@/api/events"
 import calendarService from "@/api/calendars"
 
 import { useQueryParams } from "@/hooks/use-query-params"
+import useCrypto from "@/hooks/use-crypto"
 
 import { Event } from "@/types/event"
 import { Calendar } from "@/types/calendar"
@@ -43,6 +44,10 @@ const HomePage: React.FC = () => {
 
     const modeParam = getQueryParamByKey('mode') as Mode
     const dateParam = getQueryParamByKey('date') ? new Date(getQueryParamByKey('date')) : new Date()
+
+    const {
+        decryptData,
+    } = useCrypto()
 
     const setDate = (date: Date) => {
         setQueryParam('date', date.toISOString())
@@ -62,10 +67,23 @@ const HomePage: React.FC = () => {
 
         Promise.all([eventService.getEvents(monthStart, monthEnd), calendarService.getCalendars()])
             .then(([eventsResponse, calendarsResponse]) => {
-                setEvents(eventsResponse.data as Event[])
-                setCalendars(calendarsResponse.data as Calendar[])
+                setEvents(
+                    eventsResponse.data.map((event) => ({
+                        ...event,
+                        title: decryptData(event.title)?.data as string,
+                        color: decryptData(event.color)?.data as string,
+                        calendarId: decryptData(event.calendarId ?? '')?.data as string,
+                        start: decryptData(event.start)?.data as string,
+                        end: decryptData(event.end)?.data as string,
+                    }))
+                )
+                setCalendars(calendarsResponse.data.map((calendar) => ({
+                    ...calendar,
+                    name: decryptData(calendar.name)?.data as string,
+                    items: calendar.items.map((item) => decryptData(item)?.data as string),
+                })))
             })
-            .catch((error) => toast(error.data.detail))
+            .catch((error) => toast(error.data))
             .finally(() => setLoading(false))
 
         if (modeParam && modeParam !== mode) setMode(modeParam)
@@ -82,7 +100,7 @@ const HomePage: React.FC = () => {
         const monthEnd = endOfMonth(date).toISOString()
 
         eventService.getEvents(monthStart, monthEnd)
-            .then((response) => setEvents(response.data as Event[]))
+            .then((response) => setEvents(response.data))
             .catch((error) => toast(error.data.detail))
 
         // eslint-disable-next-line

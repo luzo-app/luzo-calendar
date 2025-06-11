@@ -1,12 +1,12 @@
 import { Calendar } from "./calendar";
 
 type Event = {
-    id: number;
+    _id: string;
     title: string;
     color: string;
-    calendarId?: Calendar['id'];
-    start: Date;
-    end: Date;
+    calendarId?: Calendar['_id'];
+    start: string;
+    end: string;
 }
 
 export type { Event }
