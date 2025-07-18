@@ -1,0 +1,80 @@
+---
+name: Docker build, scan and push if on production branch
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  REPO: ghcr.io/luzo-app/luzo-calendar
+  VERSION: placeholder_to_avoid_linter_warning
+
+jobs:
+  build-and-scan:
+    name: Build & Trivy Scan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set short VERSION from SHA
+        run: echo "VERSION=${GITHUB_SHA::8}" >> $GITHUB_ENV
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: './'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+
+      - name: Build Docker image
+        run: |
+          docker build -t $REPO:$VERSION -t $REPO:latest .
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: '${{ env.REPO }}:${{ env.VERSION }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+
+  push-image:
+    name: Push Docker image
+    needs: build-and-scan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set short VERSION from SHA
+        run: echo "VERSION=${GITHUB_SHA::8}" >> $GITHUB_ENV
+
+      - name: Docker login
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker image (again)
+        run: |
+          docker build -t $REPO:$VERSION -t $REPO:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push $REPO:$VERSION
+          docker push $REPO:latest
+...
