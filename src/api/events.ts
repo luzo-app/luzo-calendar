@@ -10,14 +10,14 @@ const eventService = {
     return response.data
   },
   deleteEvent: async (id: Event["_id"]): Promise<void> => {
-    await api.delete(`/events/${id}/`)
+    await api.delete(`/events/${id}`)
   },
   createEvent: async (data: Omit<Event, "_id">): Promise<Event> => {
     const response = await api.post<Event>("/events/", data)
     return response.data
   },
   updateEvent: async (id: Event["_id"], data: Event): Promise<Event> => {
-    const response = await api.put<Event>(`/events/${id}/`, data)
+    const response = await api.put<Event>(`/events/${id}`, data)
     return response.data
   },
 };
